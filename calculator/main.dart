@@ -1,6 +1,8 @@
-import 'package:calculator/calculator.dart';
+import 'package:auto_size_text/auto_size_text.dart';
+import 'package:calci/calculation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 void main()
 {
@@ -15,20 +17,24 @@ class MyApp extends StatelessWidget
     Widget build(BuildContext context)
     {
         return MaterialApp(
-            title: 'Flutter Demo',
+            debugShowCheckedModeBanner: false,
             theme: ThemeData(
-                colorScheme: ColorScheme.fromSeed(seedColor: Colors.black)
+                elevatedButtonTheme: ElevatedButtonThemeData(
+                    style: ElevatedButton.styleFrom(
+                        shape: const CircleBorder(),
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.black
+                    )
+                )
             ),
-            home:  Calculator()
+            home: const MyHomePage()
         );
     }
 }
 
 class MyHomePage extends StatefulWidget
 {
-    const MyHomePage({super.key, required this.title});
-
-    final String title;
+    const MyHomePage({super.key});
 
     @override
     State<MyHomePage> createState() => _MyHomePageState();
@@ -36,221 +42,265 @@ class MyHomePage extends StatefulWidget
 
 class _MyHomePageState extends State<MyHomePage>
 {
-    TextEditingController num1 = TextEditingController();
-    TextEditingController num2 = TextEditingController();
-    String result = "";
+    final FocusNode keyboardFocus = FocusNode();
+    final FocusNode textFieldFocus = FocusNode();
+    final TextEditingController _controller = TextEditingController();
+
+    String display = "";
+    String lastValue = "";
+    bool resolution = false;
+
+    @override
+    void initState()
+    {
+        super.initState();
+        WidgetsBinding.instance.addPostFrameCallback((_)
+            {
+                textFieldFocus.requestFocus();
+            });
+    }
+
+    @override
+    void dispose()
+    {
+        _controller.dispose();
+        keyboardFocus.dispose();
+        textFieldFocus.dispose();
+        super.dispose();
+    }
+    void _display(String text)
+    {
+        setState(()
+            {
+                if (text == "C")
+                {
+                    display = "";
+                    lastValue = "";
+                    _controller.clear();
+                    resolution = false;
+                    return;
+                }
+
+                if (text == "⌫")
+                {
+                    if (_controller.text.isNotEmpty)
+                    {
+                        _controller.text =
+                        _controller.text.substring(0, _controller.text.length - 1);
+                    }
+                    return;
+                }
+
+                if (text == "=")
+                {
+                    if (_controller.text.isEmpty)
+                    {
+                        display = "nothing to calculate";
+                        resolution = true;
+                        return;
+                    }
+
+                    if (!resolution)
+                    {
+                        display = calculation(_controller.text);
+
+                        if (display != "Error")
+                        {
+                            lastValue = display; 
+                        }
+
+                        resolution = true;
+                    } else
+                    {
+                        if (display != "Error" && display != "nothing to calculate")
+                        {
+                            _controller.text = display;
+                            resolution = false;
+                        }
+                    }
+                    return;
+                }
+
+                if (resolution && RegExp(r'[0-9.]').hasMatch(text))
+                {
+                    _controller.text = text;
+                    display = "";
+                    resolution = false;
+                    return;
+                }
+
+                if (resolution && RegExp(r'[+\-*/]').hasMatch(text))
+                {
+                    if (display == "Error" || display == "nothing to calculate") return;
+
+                    _controller.text = lastValue + text;
+                    display = "";
+                    resolution = false;
+                    return;
+                }
+
+                _controller.text += text;
+            });
+    }
+
+    Color buttonColor(String text)
+    {
+        if (text == 'C') return Colors.red.shade500;
+        if (text == '=') return Colors.green.shade50;
+        if (text == '⌫') return Colors.blue.shade300;
+        if (text == '(' || text == ')') return Colors.purpleAccent.shade400;
+        if (RegExp(r'[/*\-+]').hasMatch(text)) return Colors.blue.shade300;
+        return Colors.orange;
+    }
+
     @override
     Widget build(BuildContext context)
     {
-
         return Scaffold(
-            appBar: AppBar(
+            appBar: AppBar(title: const Text("Calculator", style: TextStyle(color: Colors.orangeAccent, fontSize: 30)), backgroundColor: Colors.black),
+            body: RawKeyboardListener(
 
-                backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+                focusNode: keyboardFocus,
+                autofocus: false,
+                onKey: (event)
+                {
+                    if (event is RawKeyDownEvent &&
+                        (event.logicalKey == LogicalKeyboardKey.enter ||
+                            event.logicalKey == LogicalKeyboardKey.equal))
+                    {
+                        _display("=");
+                        WidgetsBinding.instance.addPostFrameCallback((_)
+                            {
+                                textFieldFocus.requestFocus();
+                            });
+                    }
+                },
 
-                title: Text(widget.title)
-            ),
-            body: Center(
                 child: Container(
-                  color: Color(0xff0D0D0D),
-                  child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                  
-                          Container(
-                              width: 300,
-                              decoration: BoxDecoration(
-                  
-                                  color: Color(0xff121212),
-                                  // color: Colors.black,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.orange, width: 2)
-                              ),
-                              child: TextField(
-                                  decoration: InputDecoration(
-                                      hintText: "Enter the value",
-                                      border: InputBorder.none,
-                                      focusColor: Colors.blue
-                                  ),
-                                  controller: num1,
-                                  style: const TextStyle(
-                                      color: Colors.white
-                                  )
-                              )
-                  
-                          ),
-                          SizedBox(height: 12),
-                          Container(
-                              width: 300,
-                              decoration: BoxDecoration(
-                                  color: Color(0xff121212),
-                                  borderRadius: BorderRadiusGeometry.circular(12),
-                                  border: Border.all(color: Colors.orange, width: 2)
-                              ),
-                              child: TextField(
-                                  decoration: InputDecoration(
-                                      hintText: "Enter the value",
-                                      border: InputBorder.none
-                  
-                                  ),
-                                  controller: num2,
-                                  style: TextStyle(
-                                      color: Colors.white
-                                  )
-                              )
-                          ),
-                          SizedBox(height: 20),
-                          Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                  Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: ElevatedButton(onPressed: ()
-                                          {
-                                              if (num1.text.isNotEmpty && num2.text.isNotEmpty)
-                                                  result = output(num1, num2, '+');
-                                              setState(()
-                                                  {
-                  
-                                                  });
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.black,
-                                              foregroundColor: Colors.orange,
-                                              side: BorderSide(color: Colors.orange,width: 2),
-                                              shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadiusGeometry.circular(12)
-                                              )
-                                          )
-                                          , child: Icon(Icons.add))
-                                  ),
-                                  Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: ElevatedButton(onPressed: ()
-                                          {
-                                              if (num1.text.isNotEmpty && num2.text.isNotEmpty)
-                                                  result = output(num1, num2, '-');
-                                              setState(()
-                                                  {
-                  
-                                                  });
-                                          },style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.black,
-                                          side: BorderSide(color: Colors.orange,width: 2),
-                                          foregroundColor: Colors.orange,
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadiusGeometry.circular(12)
-                                          )
-                                      )
-                  
-                                          , child: Icon(Icons.remove))
-                                  ),
-                                  Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: ElevatedButton(onPressed: ()
-                                          {
-                                              if (num1.text.isNotEmpty && num2.text.isNotEmpty)
-                                                  result = output(num1, num2, '*');
-                                              setState(()
-                                                  {
-                  
-                                                  });
-                                          },
+                    color: CupertinoColors.black,
+                    child: Column(
+                        children: [
+                            Container(
+                                height: 140,
+                                width: double.infinity,
+                                color: Colors.black,
+                                padding: const EdgeInsets.all(8),
+                                child: Container(
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                        color: Colors.black,
+                                        borderRadius: BorderRadius.circular(12)
+                                    ),
+                                    child: SingleChildScrollView(
+                                        reverse: true,
+                                        scrollDirection: Axis.horizontal,
+                                        child: AutoSizeText(
+                                            display,
+                                            style: TextStyle(
+                                                color: Colors.orangeAccent
+                                            ),
+                                            textAlign: TextAlign.right,
+                                            maxLines: 1,
+                                            minFontSize: 30,
+                                            maxFontSize: 50
+                                        )
+                                    )
+                                )
+                            ),
+                            SizedBox(
+                                height: 150,
+                                child: Padding(
+                                    padding: const EdgeInsets.all(8),
+                                    child: TextField(
+                                        focusNode: textFieldFocus,
+                                        controller: _controller,
+                                        inputFormatters: [
+                                            FilteringTextInputFormatter.allow(
+                                                RegExp(r'[0-9()+\-*/.]'))
+                                        ],
+                                        textAlign: TextAlign.right,
+                                        style: const TextStyle(
+                                            color: Colors.orangeAccent,
+                                            fontSize: 30),
+                                        decoration: InputDecoration(
+                                            filled: false,
+                                            fillColor: Colors.black,
 
-                                          style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.black,
-                                          foregroundColor: Colors.orange,
-                                          side: BorderSide(color: Colors.orange,width: 2),
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadiusGeometry.circular(12)
-                                          )
-                                      )
-                  
-                                          , child: Icon(CupertinoIcons.multiply))
-                                  ),
-                                  Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: ElevatedButton(onPressed: ()
-                                          {
-                  
-                                              if (num1.text.isNotEmpty && num2.text.isNotEmpty)
-                                                  result = output(num1, num2, '/');
-                                              setState(()
-                                                  {
-                  
-                                                  });
-                  
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Color(0Xff1A1A1A),
-                                              side: BorderSide(color: Colors.orange,width: 2),
-                                            foregroundColor: Colors.orange,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadiusGeometry.circular(12)
-                                            )
-                                          )
-                  
-                                          , child: Icon(CupertinoIcons.divide)
-                  
-                                      )
-                                  )
-                  
-                              ],
-                  
-                  
-                          ),
-                        SizedBox(
-                          height: 13,
-                        ),
-                        Text("${result}",style: TextStyle(fontSize: 24,fontWeight: FontWeight.bold,color: Colors.white),),
-                  
-                      ]
-                  ),
+                                            contentPadding: const EdgeInsets.symmetric(
+                                                horizontal: 10, vertical: 40),
+                                            border: OutlineInputBorder(
+
+                                                borderRadius: BorderRadius.circular(10)),
+                                            focusedBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                                borderSide:
+                                                const BorderSide(color: CupertinoColors.black, width: 0.1))
+                                        )
+                                    )
+                                )
+                            ),
+                            Expanded(
+                                child: SingleChildScrollView(
+                                    child: Padding(
+                                        padding: const EdgeInsets.all(8),
+                                        child: Wrap(
+                                            spacing: 25,
+                                            runSpacing: 25,
+                                            children: [
+                                                key("C"),
+                                                key("("),
+                                                key(")"),
+                                                key("⌫"),
+                                                key("7"),
+                                                key("8"),
+                                                key("9"),
+                                                key("/"),
+                                                key("4"),
+                                                key("5"),
+                                                key("6"),
+                                                key("*"),
+                                                key("1"),
+                                                key("2"),
+                                                key("3"),
+                                                key("-"),
+                                                key("0"),
+                                                key("."),
+                                                key("="),
+                                                key("+")
+                                            ]
+                                        )
+                                    )
+                                )
+                            )
+                        ]
+                    )
                 )
             )
         );
     }
 
+    Widget key(String text)
+    {
+        return SizedBox(
+            width: 75,
+            height: 75,
+            child: ElevatedButton(
+                onPressed: () => _display(text),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: buttonColor(text),
+                    shape: const CircleBorder(),
+                    elevation: 4
+                ),
+                child: Text(
+                    text,
+                    style: TextStyle(
+                        fontSize: text.length > 1 ? 26 : 30,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black
+                    )
+                )
+            )
+        );
+    }
 }
-
-String output(TextEditingController num1, TextEditingController num2, String sign)
-{
-    String out = "";
-    if (sign == '+')
-    {
-        double n1 = double.parse(num1.text);
-        double n2 = double.parse(num2.text);
-        double value = n1 + n2;
-        return "Result is ${value}";
-    }
-    else if (sign == '-')
-    {
-        double n1 = double.parse(num1.text);
-        double n2 = double.parse(num2.text);
-        double value = n1 - n2;
-        return "Result is ${value}";
-    }
-
-    else if (sign == '*')
-    {
-        double n1 = double.parse(num1.text);
-        double n2 = double.parse(num2.text);
-        double value = n1 * n2;
-        return "Result is ${value}";
-    }
-
-    else if (sign == '/')
-    {
-        double n1 = double.parse(num1.text);
-        double n2 = double.parse(num2.text);
-        if (n2 != 0) 
-        {
-            double value = n1 / n2;
-            return "Result is ${(value.toStringAsFixed(2))}";
-        }else {
-          return "Can't divide by zero";
-        }
-    }
-    return "";
-}
-
