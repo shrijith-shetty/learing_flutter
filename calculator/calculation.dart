@@ -8,8 +8,16 @@ String calculation(String value) {
   Decimal? val = calculator(output);
   if (val == null) return "Error";
 
-  return val.toString();
+  double result = val.toDouble();
+  String formatted = result.toStringAsFixed(2);
+
+  // Remove trailing zeros and decimal point if not needed
+  formatted = formatted.replaceAll(RegExp(r'\.?0+$'), '');
+
+  return formatted;
 }
+
+bool isDigit(String ch) => '0123456789'.contains(ch);
 
 List<String> postfix(String expression) {
   Map<String, int> precedence = {
@@ -27,14 +35,32 @@ List<String> postfix(String expression) {
 
   for (int i = 0; i < expression.length; i++) {
     String ch = expression[i];
+
     if (ch == ' ') continue;
+
+
+    if (i > 0 && number.isEmpty) {
+      String prev = expression[i - 1];
+
+      bool prevIsValue = isDigit(prev) || prev == ')';
+      bool currStartsValue = isDigit(ch) || ch == '(';
+
+      if (prevIsValue && currStartsValue) {
+        while (operators.isNotEmpty &&
+            operators.last != '(' &&
+            precedence['*']! <= precedence[operators.last]!) {
+          output.add(operators.removeLast());
+        }
+        operators.add('*');
+      }
+    }
 
     if (ch == '-' && (i == 0 || '+-*/^('.contains(expression[i - 1]))) {
       number += '-';
       continue;
     }
 
-    if ('0123456789'.contains(ch)) {
+    if (isDigit(ch)) {
       number += ch;
     } else if (ch == '.') {
       if (hasDecimal) return [];
@@ -47,6 +73,7 @@ List<String> postfix(String expression) {
         hasDecimal = false;
       }
 
+
       if (ch == '(') {
         operators.add(ch);
       } else if (ch == ')') {
@@ -55,7 +82,9 @@ List<String> postfix(String expression) {
         }
         if (operators.isEmpty) return [];
         operators.removeLast();
-      } else if ('+-*/^'.contains(ch)) {
+      }
+
+      else if ('+-*/^'.contains(ch)) {
         while (operators.isNotEmpty &&
             operators.last != '(' &&
             (precedence[ch]! < precedence[operators.last]! ||
@@ -106,18 +135,14 @@ Decimal? simpleCalculator(Decimal a, Decimal b, String op) {
   switch (op) {
     case '+':
       return a + b;
-
     case '-':
       return a - b;
-
     case '*':
       return a * b;
-
     case '/':
       if (b == Decimal.zero) return null;
       Rational r = a / b;
       return rationalToDecimal(r, precision: 20);
-
     case '^':
       if (b.scale != 0) return null;
       int power = b.toBigInt().toInt();
