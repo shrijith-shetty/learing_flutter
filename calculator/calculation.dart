@@ -1,25 +1,18 @@
-import 'dart:io';
-import 'dart:math';
+import 'package:decimal/decimal.dart';
+import 'package:rational/rational.dart';
 
-String calculation(String expression)
-{
-  List<String> value = postfix(expression);
-  print(value);
-  double? val = calculator(value);
+String calculation(String value) {
+  List<String> output = postfix(value);
+  if (output.isEmpty) return "Error";
 
+  Decimal? val = calculator(output);
   if (val == null) return "Error";
 
-  // format result
-  if (val % 1 == 0) {
-    return val.toInt().toString(); // 10.0 → 10
-  }
   return val.toString();
 }
 
-List<String> postfix(String expression)
-{
-  Map<String, int> map =
-  {
+List<String> postfix(String expression) {
+  Map<String, int> precedence = {
     '+': 1,
     '-': 1,
     '*': 2,
@@ -27,164 +20,120 @@ List<String> postfix(String expression)
     '^': 3
   };
 
-  List<String> characters = [];
-  List<String> exp = [];
+  List<String> operators = [];
+  List<String> output = [];
   String number = "";
+  bool hasDecimal = false;
 
-  for (int i = 0; i < expression.length; i++)
-  {
-    if (expression[i] == ' ') continue;
+  for (int i = 0; i < expression.length; i++) {
+    String ch = expression[i];
+    if (ch == ' ') continue;
 
-    if (expression[i] == '-' &&
-        (i == 0 || '+-*/^('.contains(expression[i - 1])))
-    {
-      if (number.startsWith('-'))
-      {
-        number = number.substring(1);
-      }
-      else
-      {
-        number = '-$number';
-      }
+    if (ch == '-' && (i == 0 || '+-*/^('.contains(expression[i - 1]))) {
+      number += '-';
       continue;
     }
 
-
-    if (['0','1','2','3','4','5','6','7','8','9'].contains(expression[i]) ||
-        expression[i] == '.')
-    {
-      number += expression[i];
-    }
-    else
-    {
-      if (number.isNotEmpty)
-      {
-        exp.add(number);
+    if ('0123456789'.contains(ch)) {
+      number += ch;
+    } else if (ch == '.') {
+      if (hasDecimal) return [];
+      hasDecimal = true;
+      number += '.';
+    } else {
+      if (number.isNotEmpty) {
+        output.add(number);
         number = "";
+        hasDecimal = false;
       }
 
-      if (expression[i] == '(')
-      {
-        if (i > 0 &&
-            ('0123456789.'.contains(expression[i - 1]) ||
-                expression[i - 1] == ')'))
-        {
-          characters.add('*');
+      if (ch == '(') {
+        operators.add(ch);
+      } else if (ch == ')') {
+        while (operators.isNotEmpty && operators.last != '(') {
+          output.add(operators.removeLast());
         }
-        characters.add('(');
-      }
-      else if (expression[i] == ')')
-      {
-        while (characters.isNotEmpty && characters.last != '(')
-        {
-          exp.add(characters.removeLast());
+        if (operators.isEmpty) return [];
+        operators.removeLast();
+      } else if ('+-*/^'.contains(ch)) {
+        while (operators.isNotEmpty &&
+            operators.last != '(' &&
+            (precedence[ch]! < precedence[operators.last]! ||
+                (precedence[ch] == precedence[operators.last] && ch != '^'))) {
+          output.add(operators.removeLast());
         }
-        if (characters.isEmpty)
-        {
-          return [];
-        }
-        characters.removeLast();
-      }
-      else if (['+','-','*','/','^'].contains(expression[i]))
-      {
-        while (characters.isNotEmpty &&
-            characters.last != '(' &&
-            map[expression[i]]! <= map[characters.last]!)
-        {
-          exp.add(characters.removeLast());
-        }
-        characters.add(expression[i]);
-      }
-      else
-      {
+        operators.add(ch);
+      } else {
         return [];
       }
     }
   }
 
-  if (number.isNotEmpty)
-  {
-    exp.add(number);
+  if (number.isNotEmpty) output.add(number);
+
+  while (operators.isNotEmpty) {
+    if (operators.last == '(') return [];
+    output.add(operators.removeLast());
   }
 
-  while (characters.isNotEmpty)
-  {
-    if (characters.last == '(')
-    {
-      return [];
-    }
-    exp.add(characters.removeLast());
-  }
-
-  return exp;
+  return output;
 }
 
-double? calculator(List<String> expression)
-{
-  double? output = 0;
-  List<String> val = [];
+Decimal? calculator(List<String> postfix) {
+  List<Decimal> stack = [];
 
-  for (int i = 0; i < expression.length; i++)
-  {
-    String token = expression[i];
+  for (String token in postfix) {
+    if (token.length == 1 && '+-*/^'.contains(token)) {
+      if (stack.length < 2) return null;
 
-    if (['+', '-', '*', '/', '^'].contains(token))
-    {
-      if (val.length < 2)
-      {
-        return null;
-      }
+      Decimal b = stack.removeLast();
+      Decimal a = stack.removeLast();
 
-      double num2 = double.parse(val.removeLast());
-      double num1 = double.parse(val.removeLast());
-      output = simple_calculator(num1, num2, token);
+      Decimal? result = simpleCalculator(a, b, token);
+      if (result == null) return null;
 
-      if (output == null)
-      {
-        return null;
-      }
-
-      val.add(output.toString());
-    }
-    else
-    {
-      val.add(token);
+      stack.add(result);
+    } else {
+      stack.add(Decimal.parse(token));
     }
   }
 
-  if (val.isEmpty)
-  {
-    return 0;
-  }
-
-  return double.parse(val.last);
+  if (stack.length != 1) return null;
+  return stack.first;
 }
 
-double? simple_calculator(double values, double values2, String chareters)
-{
-  if (chareters == '+')
-  {
-    return values + values2;
-  }
-  else if (chareters == '-')
-  {
-    return values - values2;
-  }
-  else if (chareters == '*')
-  {
-    return values * values2;
-  }
-  else if (chareters == '/')
-  {
-    if (values2 == 0)
-    {
-      return null;
-    }
-    return values / values2;
-  }
-  else if (chareters == '^')
-  {
-    return pow(values, values2).toDouble();
+Decimal? simpleCalculator(Decimal a, Decimal b, String op) {
+  switch (op) {
+    case '+':
+      return a + b;
+
+    case '-':
+      return a - b;
+
+    case '*':
+      return a * b;
+
+    case '/':
+      if (b == Decimal.zero) return null;
+      Rational r = a / b;
+      return rationalToDecimal(r, precision: 20);
+
+    case '^':
+      if (b.scale != 0) return null;
+      int power = b.toBigInt().toInt();
+      if (power < 0) return null;
+
+      Decimal result = Decimal.one;
+      for (int i = 0; i < power; i++) {
+        result *= a;
+      }
+      return result;
   }
   return null;
+}
+
+Decimal rationalToDecimal(Rational r, {int precision = 20}) {
+  BigInt scaled =
+      (r.numerator * BigInt.from(10).pow(precision)) ~/ r.denominator;
+  return Decimal.fromBigInt(scaled).shift(-precision);
 }
