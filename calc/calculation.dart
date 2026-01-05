@@ -4,7 +4,6 @@ import 'package:decimal/decimal.dart';
 String calculation(String text)
 {
     List<String> value = postfix(text);
-    print(value);
     String val = calculator(value);
     print(val);
     if (val != "")
@@ -179,7 +178,7 @@ String simpleCalculator(Decimal values, Decimal values2, String character)
   }
   else if (character == '/')
   {
-    if (values2 == 0 as Decimal)
+    if (values2 == 0.0 )
     {
       // print("Not Possible");
       return "";
