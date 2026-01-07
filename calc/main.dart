@@ -55,11 +55,10 @@ class _MyHomePageState extends State<MyHomePage>
     @override
     void initState()
     {
-        // TODO: implement initState
         super.initState();
         WidgetsBinding.instance.addPostFrameCallback((_)
             {
-                textFieldFocus.requestFocus();
+                keyboardFocus.requestFocus();
             });
     }
     @override
@@ -86,20 +85,34 @@ class _MyHomePageState extends State<MyHomePage>
 
                 onKey: (event)
                 {
-                    bool isDigit = event.logicalKey.keyLabel.contains(RegExp(r'[0-9]'));
                     final limitedOperator =
-                        {
-                            event.isKeyPressed(LogicalKeyboardKey.asterisk),
-                            event.isKeyPressed(LogicalKeyboardKey.slash),
-                            event.isKeyPressed(LogicalKeyboardKey.add),
-                            event.isKeyPressed(LogicalKeyboardKey.minus),
-                            event.isKeyPressed(LogicalKeyboardKey.parenthesisLeft),
-                            event.isKeyPressed(LogicalKeyboardKey.parenthesisRight)
-                        };
-                    if (isEntered && (isDigit || limitedOperator.contains(event.logicalKey)))
                     {
+                        (LogicalKeyboardKey.asterisk),
+                        (LogicalKeyboardKey.slash),
+                        (LogicalKeyboardKey.add),
+                        (LogicalKeyboardKey.minus),
+                        (LogicalKeyboardKey.parenthesisLeft),
+                        (LogicalKeyboardKey.parenthesisRight)
 
+                    };
+
+                    final operators =
+                        {
+                            (LogicalKeyboardKey.digit0),
+                            (LogicalKeyboardKey.digit1),
+                            (LogicalKeyboardKey.digit2),
+                            (LogicalKeyboardKey.digit3),
+                            (LogicalKeyboardKey.digit4),
+                            (LogicalKeyboardKey.digit5),
+                            (LogicalKeyboardKey.digit6),
+                            (LogicalKeyboardKey.digit7),
+                            (LogicalKeyboardKey.digit8),
+                            (LogicalKeyboardKey.digit9)
+                        };
+                    if (isEntered == true && limitedOperator.contains(event.logicalKey) || operators.contains(event.logicalKey))
+                    {
                         display = "";
+                        lastString += limitedOperator as String;
                         controller.text = lastString;
                         isEntered = false;
                     }
@@ -111,7 +124,7 @@ class _MyHomePageState extends State<MyHomePage>
 
                     WidgetsBinding.instance.addPostFrameCallback((_)
                         {
-                            textFieldFocus.requestFocus();
+                            keyboardFocus.requestFocus();
                         }
                     );
 
@@ -152,7 +165,6 @@ class _MyHomePageState extends State<MyHomePage>
                                 child: TextField(
                                     controller: controller,
                                     focusNode: textFieldFocus,
-                                    keyboardType: TextInputType.number,
                                     inputFormatters: [
                                         FilteringTextInputFormatter.allow(RegExp(r'[0-9*/()\-+\.=C]'))
                                     ],
