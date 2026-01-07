@@ -1,195 +1,183 @@
 import 'package:decimal/decimal.dart';
 
-
 String calculation(String text)
 {
     List<String> value = postfix(text);
     String val = calculator(value);
-    print(val);
-    if (val != "")
+    if (val != "null")
     {
-      return val;
+        return val;
     }
-   return "";
+    return "Error";
 }
 
 List<String> postfix(String expression)
 {
-  Map<String, int> map =
-  {
-    '+': 1,
-    '-': 1,
-    '*': 2,
-    '/': 2,
-    '^': 3
-  };
+    Map<String, int> map =
+        {
+            '+': 1,
+            '-': 1,
+            '*': 2,
+            '/': 2,
+            '^': 3
+        };
 
-  List<String> characters = [];
-  List<String> exp = [];
-  String number = "";
+    List<String> characters = [];
+    List<String> exp = [];
+    String number = "";
 
-  for (int i = 0; i < expression.length; i++)
-  {
-    if (expression[i] == ' ') continue;
-
-    if (expression[i] == '-' &&
-        (i == 0 || '+-*/^('.contains(expression[i - 1])))
+    for (int i = 0; i < expression.length; i++)
     {
-      if (number.startsWith('-'))
-      {
-        number = number.substring(1);
-      }
-      else
-      {
-        number = '-$number';
-      }
-      continue;
+        if (expression[i] == ' ') continue;
+
+        if (expression[i] == '-' &&
+            (i == 0 || '+-*/^('.contains(expression[i - 1])))
+        {
+            if (number.startsWith('-'))
+            {
+                number = number.substring(1);
+            }
+            else
+            {
+                number = '-$number';
+            }
+            continue;
+        }
+
+        if (['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].contains(expression[i]) ||
+            expression[i] == '.')
+        {
+            number += expression[i];
+        }
+        else
+        {
+            if (number.isNotEmpty)
+            {
+                exp.add(number);
+                number = "";
+            }
+
+            if (expression[i] == '(')
+            {
+                if (i > 0 &&
+                    ('0123456789.'.contains(expression[i - 1]) ||
+                        expression[i - 1] == ')'))
+                {
+                    characters.add('*');
+                }
+                characters.add('(');
+            }
+            else if (expression[i] == ')')
+            {
+                while (characters.isNotEmpty && characters.last != '(')
+                {
+                    exp.add(characters.removeLast());
+                }
+                if (characters.isEmpty)
+                {
+                    return [];
+                }
+                characters.removeLast();
+            }
+            else if (['+', '-', '*', '/', '^'].contains(expression[i]))
+            {
+                while (characters.isNotEmpty &&
+                    characters.last != '(' &&
+                    map[expression[i]]! <= map[characters.last]!)
+                {
+                    exp.add(characters.removeLast());
+                }
+                characters.add(expression[i]);
+            }
+            else
+            {
+                return [];
+            }
+        }
     }
 
-
-    if (['0','1','2','3','4','5','6','7','8','9'].contains(expression[i]) ||
-        expression[i] == '.')
+    if (number.isNotEmpty)
     {
-      number += expression[i];
-    }
-    else
-    {
-      if (number.isNotEmpty)
-      {
         exp.add(number);
-        number = "";
-      }
-
-      if (expression[i] == '(')
-      {
-        if (i > 0 &&
-            ('0123456789.'.contains(expression[i - 1]) ||
-                expression[i - 1] == ')'))
-        {
-          characters.add('*');
-        }
-        characters.add('(');
-      }
-      else if (expression[i] == ')')
-      {
-        while (characters.isNotEmpty && characters.last != '(')
-        {
-          exp.add(characters.removeLast());
-        }
-        if (characters.isEmpty)
-        {
-          // print("expression is wrong");
-          return [];
-        }
-        characters.removeLast();
-      }
-      else if (['+','-','*','/','^'].contains(expression[i]))
-      {
-        while (characters.isNotEmpty &&
-            characters.last != '(' &&
-            map[expression[i]]! <= map[characters.last]!)
-        {
-          exp.add(characters.removeLast());
-        }
-        characters.add(expression[i]);
-      }
-      else
-      {
-        // print("wrong expression");
-        return [];
-      }
     }
-  }
 
-  if (number.isNotEmpty)
-  {
-    exp.add(number);
-  }
-
-  while (characters.isNotEmpty)
-  {
-    if (characters.last == '(')
+    while (characters.isNotEmpty)
     {
-      // print("Wrong Expression");
-      return [];
+        if (characters.last == '(')
+        {
+            return [];
+        }
+        exp.add(characters.removeLast());
     }
-    exp.add(characters.removeLast());
-  }
 
-  return exp;
+    return exp;
 }
 
 String calculator(List<String> expression)
 {
-  String output = "";
-  List<String> val = [];
+    String output = "";
+    List<String> val = [];
 
-  for (int i = 0; i < expression.length; i++)
-  {
-    String token = expression[i];
-
-    if (['+', '-', '*', '/', '^'].contains(token))
+    for (int i = 0; i < expression.length; i++)
     {
-      if (val.length < 2)
-      {
-        // print("Invalid expression");
-        return "";
-      }
+        String token = expression[i];
 
-      Decimal num2 = Decimal.parse(val.removeLast());
-      Decimal num1 = Decimal.parse(val.removeLast());
-      output = simpleCalculator(num1, num2, token);
+        if (['+', '-', '*', '/', '^'].contains(token))
+        {
+            if (val.length < 2)
+            {
+                return "null";
+            }
 
-      if (output == "")
-      {
-        // print("Can not divide by '0'");
-        return "";
-      }
+            Decimal num2 = Decimal.parse(val.removeLast());
+            Decimal num1 = Decimal.parse(val.removeLast());
+            output = simpleCalculator(num1, num2, token);
 
-      val.add(output.toString());
+            if (output == "")
+            {
+                return "null";
+            }
+
+            val.add(output.toString());
+        }
+        else
+        {
+            val.add(token);
+        }
     }
-    else
+
+    if (val.isEmpty)
     {
-      val.add(token);
+        return "null";
     }
-  }
 
-  if (val.isEmpty)
-  {
-    return "";
-  }
-
-  return (val.last).toString();
+    return (val.last).toString();
 }
 
 String simpleCalculator(Decimal values, Decimal values2, String character)
 {
-  if (character == '+')
-  {
-    return (values + values2).toStringAsFixed(2);
-  }
-  else if (character == '-')
-  {
-    return (values - values2).toStringAsFixed(2);
-  }
-  else if (character == '*')
-  {
-    return (values * values2).toStringAsFixed(2);
-  }
-  else if (character == '/')
-  {
-    if (values2 == 0.0 )
+    if (character == '+')
     {
-      // print("Not Possible");
-      return "";
+        return (values + values2).toStringAsFixed(2);
     }
-    return (values / values2).toString();
-  }
-  // else if (character == '^')
-  // {
-  //   return pow(values, values2).toStringAsFixed(2);
-  // }
+    else if (character == '-')
+    {
+        return (values - values2).toStringAsFixed(2);
+    }
+    else if (character == '*')
+    {
+        return (values * values2).toStringAsFixed(2);
+    }
+    else if (character == '/')
+    {
 
-  // print("Invalid expression");
-  return "";
+        double a = (values).toDouble();
+        double b = (values2).toDouble();
+        if (b == 0)
+        {
+            return "null";
+        }
+        return (a / b).toStringAsFixed(2);
+    }
+    return "null";
 }
