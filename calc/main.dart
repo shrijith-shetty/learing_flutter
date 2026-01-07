@@ -38,148 +38,224 @@ class MyHomePage extends StatefulWidget
 
 class _MyHomePageState extends State<MyHomePage>
 {
+    late FocusNode keyboardFocus = FocusNode();
+    late FocusNode textFieldFocus = FocusNode();
     int openBracket = 0;
     int closedBracket = 0;
     int numbracket = 0;
     int noDot = 0;
     TextEditingController controller = TextEditingController();
-    String display = "asdf";
+    String display = "";
     String lastString = "";
     String lastCharacter = "";
     String str = "";
     bool isDot = false;
+    bool isEntered = false;
 
+    @override
+    void initState()
+    {
+        // TODO: implement initState
+        super.initState();
+        WidgetsBinding.instance.addPostFrameCallback((_)
+            {
+                textFieldFocus.requestFocus();
+            });
+    }
+    @override
+    void dispose()
+    {
+
+        super.dispose();
+        controller.dispose();
+        keyboardFocus.dispose();
+        textFieldFocus.dispose();
+    }
     @override
     Widget build(BuildContext context)
     {
 
         return Scaffold(
+
             appBar: AppBar(
                 backgroundColor: CupertinoColors.black,
                 title: Center(child: Text("Calculator", style: TextStyle(color: Colors.orange, fontSize: 40 /*fontWeight: FontWeight.bold*/)))
             ),
-            body: Container(
-                color: CupertinoColors.black,
-                child: Column(
-                    children: [
+            body: RawKeyboardListener(focusNode: keyboardFocus,
+                autofocus: false,
 
-                        SizedBox(
-                            height: 140,
-                            width: double.infinity,
+                onKey: (event)
+                {
+                    bool isDigit = event.logicalKey.keyLabel.contains(RegExp(r'[0-9]'));
+                    final limitedOperator =
+                        {
+                            event.isKeyPressed(LogicalKeyboardKey.asterisk),
+                            event.isKeyPressed(LogicalKeyboardKey.slash),
+                            event.isKeyPressed(LogicalKeyboardKey.add),
+                            event.isKeyPressed(LogicalKeyboardKey.minus),
+                            event.isKeyPressed(LogicalKeyboardKey.parenthesisLeft),
+                            event.isKeyPressed(LogicalKeyboardKey.parenthesisRight)
+                        };
+                    if (isEntered && (isDigit || limitedOperator.contains(event.logicalKey)))
+                    {
 
-                            child: Padding(
-                                padding: const EdgeInsets.only(top: 100),
+                        display = "";
+                        controller.text = lastString;
+                        isEntered = false;
+                    }
+                    else if (event.isKeyPressed(LogicalKeyboardKey.enter) || event.isKeyPressed(LogicalKeyboardKey.equal))
+                    {
+                        _display("=");
+                        isEntered = true;
+                    }
 
-                                child: SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: Text(
-                                        display,
-                                        textAlign: TextAlign.right,
-                                        style: TextStyle(
-                                            fontSize: 30,
-                                            color: Colors.orange
+                    WidgetsBinding.instance.addPostFrameCallback((_)
+                        {
+                            textFieldFocus.requestFocus();
+                        }
+                    );
+
+                },
+                child: Container(
+                    color: CupertinoColors.black,
+                    child: Column(
+                        children: [
+
+                            SizedBox(
+                                height: 190,
+                                width: double.infinity,
+
+                                child: Padding(
+                                    padding: const EdgeInsets.only(top: 100),
+
+                                    child: SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        reverse: true,
+                                        child: Text(
+                                            display,
+                                            textAlign: TextAlign.right,
+                                            style: TextStyle(
+
+                                                fontSize: 30,
+                                                color: Colors.orange
+                                            )
                                         )
                                     )
                                 )
-                            )
-                        ),
-                        Container(
+                            ),
+                            Container(
 
-                            color: Colors.black,
-                            height: 100,
-                            width: double.infinity,
+                                color: Colors.black,
+                                height: 100,
+                                width: double.infinity,
 
-                            child: TextField(
-                                inputFormatters: [
-                                    FilteringTextInputFormatter.allow(RegExp(r'[0-9*/()\-+\.=\C]'))
-                                ],
-                                cursorWidth: 1,
-                                cursorHeight: 1,
-                                maxLines: null,
-                                expands: true,
-                                controller: controller,
-                                textAlign: TextAlign.right,
-                                style: TextStyle(height: 3, color: Colors.orange, fontSize: 35),
-
-                                decoration: InputDecoration(
-                                    filled: true,
-                                    fillColor: CupertinoColors.black,
-                                    disabledBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                            width: double.infinity,
-                                            color: CupertinoColors.black
-                                        ),
-                                        borderRadius: .circular(0)
+                                child: TextField(
+                                    controller: controller,
+                                    focusNode: textFieldFocus,
+                                    keyboardType: TextInputType.number,
+                                    inputFormatters: [
+                                        FilteringTextInputFormatter.allow(RegExp(r'[0-9*/()\-+\.=C]'))
+                                    ],
+                                    maxLines: 1,
+                                    textAlign: TextAlign.right,
+                                    textDirection: TextDirection.ltr,
+                                    cursorColor: Colors.orange,
+                                    cursorWidth: 3,
+                                    style: TextStyle(
+                                        fontSize: 35,
+                                        color: Colors.orange,
+                                        height: 1.2
+                                    ),
+                                    decoration: InputDecoration(
+                                        border: InputBorder.none,
+                                        filled: true,
+                                        fillColor: CupertinoColors.black,
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10)
                                     )
-
                                 )
+
+                            ),
+
+                            Wrap(
+                                runSpacing: 25,
+                                children: [
+
+                                    Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                        children: [buttonText("C"),
+                                            buttonText("("),
+                                            buttonText(")"),
+                                            buttonText("←", icon: Icon(Icons.backspace))
+                                        ]
+                                    ),
+                                    Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                        children: [buttonText("7"),
+                                            buttonText("8"),
+                                            buttonText("9"),
+                                            buttonText("/")
+                                        ]
+                                    ),
+                                    Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                        children: [buttonText("4"),
+                                            buttonText("5"),
+                                            buttonText("6"),
+                                            buttonText("*")
+                                        ]),
+                                    Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                        children: [buttonText("1"),
+                                            buttonText("2"),
+                                            buttonText("3"),
+                                            buttonText("-")
+                                        ]),
+                                    Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+
+                                        children: [buttonText("0"),
+                                            buttonText("."),
+                                            buttonText("="),
+                                            buttonText("+")
+                                        ])
+                                ]
                             )
-                        ),
-                        Wrap(
-                            runSpacing: 25,
-                            children: [
-
-                                Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                    children: [buttonText("C"),
-                                        buttonText("("),
-                                        buttonText(")"),
-                                        buttonText("←", icon: Icon(Icons.backspace))
-                                    ]
-                                ),
-                                Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                    children: [buttonText("7"),
-                                        buttonText("8"),
-                                        buttonText("9"),
-                                        buttonText("/")
-                                    ]
-                                ),
-                                Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                    children: [buttonText("4"),
-                                        buttonText("5"),
-                                        buttonText("6"),
-                                        buttonText("*")
-                                    ]),
-                                Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                    children: [buttonText("1"),
-                                        buttonText("2"),
-                                        buttonText("3"),
-                                        buttonText("-")
-                                    ]),
-                                Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-
-                                    children: [buttonText("0"),
-                                        buttonText("."),
-                                        buttonText("="),
-                                        buttonText("+")
-                                    ])
-                            ]
-                        )
-                    ]
+                        ]
+                    )
                 )
             )
+
         );
     }
     void _display(String text)
     {
         if (display.isNotEmpty && RegExp(r'[0-9+-/*]').hasMatch(text))
         {
-            controller.text = lastString;
-            display = "";
+            if (display == "Error")
+            {
+                display = "";
+            }
+            else
+            {
+                controller.text = lastString;
+                display = "";
+            }
         }
+
         if (text == "C")
         {
+            display = "";
             controller.clear();
-            display = controller.text;
-            lastString = " ";
+            lastString = "";
             openBracket = 0;
             closedBracket = 0;
             numbracket = 0;
             noDot = 0;
+            setState(()
+                {
+
+                });
         }
         else if (text == "←")
         {
@@ -205,9 +281,7 @@ class _MyHomePageState extends State<MyHomePage>
         }
         else if (text == '=')
         {
-            print('asdf');
             display = calculation(controller.text);
-            print(display);
             lastString = display;
         }
         else
@@ -217,7 +291,7 @@ class _MyHomePageState extends State<MyHomePage>
             }
             else if (text == '(')
             {
-                if (!(str[str.length - 1] == '(' && ( text == '(')))
+                if (str.isNotEmpty && !(str[str.length - 1] == '(' && ( text == '(')))
                 {
                     numbracket++;
                 }
@@ -226,10 +300,14 @@ class _MyHomePageState extends State<MyHomePage>
                 openBracket++;
                 isDot = false;
             }
-            else if (text == ')' && openBracket > closedBracket)
+            else if (text == ')')
             {
+                if (!(openBracket > closedBracket))
+                {
+                    return;
+                }
 
-                ++closedBracket;
+                closedBracket++;
                 controller.text += text;
                 isDot = false;
 
@@ -241,7 +319,7 @@ class _MyHomePageState extends State<MyHomePage>
                     numbracket++;
                     isDot = false;
                 }
-                if (text == '.' /*&& controller.text.isNotEmpty*/ && isDot == false && numbracket >= noDot)
+                if (text == '.' && isDot == false && numbracket >= noDot)
                 {
 
                     isDot = true;
