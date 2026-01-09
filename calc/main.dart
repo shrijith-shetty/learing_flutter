@@ -212,7 +212,7 @@ class _MyHomePageState extends State<MyHomePage>
         }
         else
         {
-            if (RegExp(r'[+×/.]').hasMatch(text) && RegExp(r'[×/+.]').hasMatch(lastCharacter) || ( (lastCharacter == "(" ) && (text == '(' || RegExp(r'[+\-/×]').hasMatch(text))))
+            if (RegExp(r'[+×/.]').hasMatch(text) && RegExp(r'[×/+.]').hasMatch(lastCharacter) || ( (lastCharacter == "(" ) && (text == '(' || RegExp(r'[+\-/×]').hasMatch(lastCharacter))))
             {
             }
             else if (text == '(')
@@ -253,7 +253,13 @@ class _MyHomePageState extends State<MyHomePage>
                     noDot++;
                 } else if (text != '.' && text != ')' && text != '(')
                 {
-                    controller.text += text;
+                    if (text == '–') 
+                    {
+                        controller.text += '-';
+                    } else 
+                    {
+                        controller.text += text;
+                    }
                 }
             }
         }
@@ -264,8 +270,7 @@ class _MyHomePageState extends State<MyHomePage>
         }
         setState(()
             {
-            {}
-            }
+            {}}
         );
     }
 
@@ -278,16 +283,18 @@ class _MyHomePageState extends State<MyHomePage>
 
         return Container(
 
-            width: size,
+            width: isPortrait ? size : size * 4,
             height: size,
             decoration: BoxDecoration(
                 color: buttonColor(text),
-                shape: BoxShape.circle
+
+                shape: isPortrait ? BoxShape.circle : BoxShape.rectangle,
+                borderRadius: isPortrait ? null : BorderRadius.circular(20)
             ),
             child: InkWell(onTap: () => _display(text),
                 child: Center(
                     child: icon ?? Text(text, style: TextStyle(
-                                fontSize: isPortrait ? 40.sp : 9.sp,
+                                fontSize: isPortrait ? 40.sp : 11.sp,
                                 color: CupertinoColors.black,
                                 fontWeight: FontWeight.bold
                             )
@@ -303,7 +310,7 @@ class _MyHomePageState extends State<MyHomePage>
         if (text == '=') return Colors.green.shade50;
         if (text == '←') return Colors.blue.shade300;
         if (text == '(' || text == ')') return Colors.purpleAccent.shade400;
-        if (RegExp(r'[/×\-+]').hasMatch(text)) return Colors.blue.shade300;
+        if (RegExp(r'[/×\–+]').hasMatch(text)) return Colors.blue.shade300;
         return Colors.orange;
     }
     Widget landScape()
@@ -315,11 +322,11 @@ class _MyHomePageState extends State<MyHomePage>
 
                     SizedBox(
 
-                        height: 110.h,
+                        height: 100.h,
                         width: double.infinity.w,
 
                         child: Padding(
-                            padding: const EdgeInsets.only(top: 20),
+                            padding: const EdgeInsets.only(top: 10),
                             child: SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 reverse: true,
@@ -338,18 +345,20 @@ class _MyHomePageState extends State<MyHomePage>
                     Container(
 
                         color: Colors.black,
-                        height: 110.h,
+                        height: 100.h,
                         width: double.infinity.h,
 
                         child: TextField(
+
                             readOnly: true,
                             controller: controller,
                             focusNode: textFieldFocus,
                             inputFormatters: [
                                 FilteringTextInputFormatter.allow(RegExp(r'[0-9×/()\-+.]'))
                             ],
+                            autofocus: true,
                             maxLines: 1,
-                            textAlign: TextAlign.right,
+                            textAlign: TextAlign.end,
                             textDirection: TextDirection.ltr,
                             cursorColor: Colors.orange,
                             cursorWidth: 3.h,
@@ -370,7 +379,7 @@ class _MyHomePageState extends State<MyHomePage>
                     ),
 
                     SizedBox(
-                        width: 150.w,
+                        width: double.infinity,
                         child: Wrap(
                             runSpacing: 10.r,
                             children: [
@@ -403,7 +412,7 @@ class _MyHomePageState extends State<MyHomePage>
                                         buttonText("1"),
                                         buttonText("2"),
                                         buttonText("3"),
-                                        buttonText("-"),
+                                        buttonText("–"/*icon: Icon(CupertinoIcons.minus)*/),
                                         buttonText(")")
 
                                     ]
@@ -516,7 +525,7 @@ class _MyHomePageState extends State<MyHomePage>
                                     buttonText("4"),
                                     buttonText("5"),
                                     buttonText("6"),
-                                    buttonText("×",/*icon:Icon(CupertinoIcons.asterisk_circle)×*/)
+                                    buttonText("×" /*icon:Icon(CupertinoIcons.asterisk_circle)×*/)
                                 ]
                             ),
                             Row(
@@ -525,7 +534,7 @@ class _MyHomePageState extends State<MyHomePage>
                                     buttonText("1"),
                                     buttonText("2"),
                                     buttonText("3"),
-                                    buttonText("-")
+                                    buttonText("–")
                                 ]
                             ),
                             Row(
