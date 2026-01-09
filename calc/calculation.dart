@@ -17,7 +17,7 @@ List<String> postfix(String expression)
         {
             '+': 1,
             '-': 1,
-            '*': 2,
+            '×': 2,
             '/': 2,
             '^': 3
         };
@@ -31,7 +31,7 @@ List<String> postfix(String expression)
         if (expression[i] == ' ') continue;
 
         if (expression[i] == '-' &&
-            (i == 0 || '+-*/^('.contains(expression[i - 1])))
+            (i == 0 || '+-×/^('.contains(expression[i - 1])))
         {
             if (number.startsWith('-'))
             {
@@ -63,7 +63,7 @@ List<String> postfix(String expression)
                     ('0123456789.'.contains(expression[i - 1]) ||
                         expression[i - 1] == ')'))
                 {
-                    characters.add('*');
+                    characters.add('×');
                 }
                 characters.add('(');
             }
@@ -79,7 +79,7 @@ List<String> postfix(String expression)
                 }
                 characters.removeLast();
             }
-            else if (['+', '-', '*', '/', '^'].contains(expression[i]))
+            else if (['+', '-', '×', '/', '^'].contains(expression[i]))
             {
                 while (characters.isNotEmpty &&
                     characters.last != '(' &&
@@ -122,7 +122,7 @@ String calculator(List<String> expression)
     {
         String token = expression[i];
 
-        if (['+', '-', '*', '/', '^'].contains(token))
+        if (['+', '-', '×', '/', '^'].contains(token))
         {
             if (val.length < 2)
             {
@@ -164,7 +164,7 @@ String simpleCalculator(Decimal values, Decimal values2, String character)
     {
         return (values - values2).toStringAsFixed(2);
     }
-    else if (character == '*')
+    else if (character == '×')
     {
         return (values * values2).toStringAsFixed(2);
     }
