@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'calculation.dart';
 
@@ -15,14 +16,26 @@ class MyApp extends StatelessWidget
     @override
     Widget build(BuildContext context)
     {
-        return MaterialApp(
-            title: 'Flutter Demo',
-            theme: ThemeData(
-
-                colorScheme: .fromSeed(seedColor: Colors.deepPurple)
-            ),
-            home: const MyHomePage(title: 'Flutter Demo Home Page')
+        // print("asdf");
+        // print(MediaQuery.of(context).size.width);
+        // print(MediaQuery.of(context).size.height);
+        return ScreenUtilInit(
+            designSize: const Size(360, 690),
+            minTextAdapt: true,
+            child: MaterialApp(
+                builder: (context, child)
+                {
+                    return MediaQuery(
+                        data: MediaQuery.of(context).copyWith(
+                            textScaleFactor: 1.0
+                        ),
+                        child: child!
+                    );
+                },
+                home: const MyHomePage(title: 'Flutter Demo Home Page')
+            )
         );
+
     }
 }
 
@@ -38,11 +51,11 @@ class MyHomePage extends StatefulWidget
 
 class _MyHomePageState extends State<MyHomePage>
 {
-    late FocusNode keyboardFocus = FocusNode();
-    late FocusNode textFieldFocus = FocusNode();
+    final FocusNode keyboardFocus = FocusNode();
+    final FocusNode textFieldFocus = FocusNode();
     int openBracket = 0;
     int closedBracket = 0;
-    int numbracket = 0;
+    int operatorCount = 0;
     int noDot = 0;
     TextEditingController controller = TextEditingController();
     String display = "";
@@ -64,37 +77,42 @@ class _MyHomePageState extends State<MyHomePage>
     @override
     void dispose()
     {
-
-        super.dispose();
         controller.dispose();
         keyboardFocus.dispose();
         textFieldFocus.dispose();
+        super.dispose();
     }
     @override
     Widget build(BuildContext context)
     {
-
+        bool isPortrait =
+            MediaQuery.of(context).orientation == Orientation.portrait;
         return Scaffold(
 
             appBar: AppBar(
+
                 backgroundColor: CupertinoColors.black,
-                title: Center(child: Text("Calculator", style: TextStyle(color: Colors.orange, fontSize: 40 /*fontWeight: FontWeight.bold*/)))
+                title: Center(child: Text("Calculator", style: TextStyle(color: Colors.orange, fontSize: isPortrait ? 40.sp : 20.sp /*fontWeight: FontWeight.bold*/))),
+                centerTitle: true
+
             ),
             body: RawKeyboardListener(focusNode: keyboardFocus,
                 autofocus: false,
 
                 onKey: (event)
                 {
+                    if (event is! RawKeyDownEvent || event.repeat) return;
+                    // if () return;
                     final limitedOperator =
-                    {
-                        (LogicalKeyboardKey.asterisk),
-                        (LogicalKeyboardKey.slash),
-                        (LogicalKeyboardKey.add),
-                        (LogicalKeyboardKey.minus),
-                        (LogicalKeyboardKey.parenthesisLeft),
-                        (LogicalKeyboardKey.parenthesisRight)
+                        {
+                            (LogicalKeyboardKey.asterisk),
+                            (LogicalKeyboardKey.slash),
+                            (LogicalKeyboardKey.add),
+                            (LogicalKeyboardKey.minus),
+                            (LogicalKeyboardKey.parenthesisLeft),
+                            (LogicalKeyboardKey.parenthesisRight)
 
-                    };
+                        };
 
                     final operators =
                         {
@@ -109,10 +127,10 @@ class _MyHomePageState extends State<MyHomePage>
                             (LogicalKeyboardKey.digit8),
                             (LogicalKeyboardKey.digit9)
                         };
-                    if (isEntered == true && limitedOperator.contains(event.logicalKey) || operators.contains(event.logicalKey))
+                    if (isEntered && (limitedOperator.contains(event.logicalKey) || operators.contains(event.logicalKey)))
                     {
                         display = "";
-                        lastString += limitedOperator as String;
+                        lastString += event.logicalKey.keyLabel;
                         controller.text = lastString;
                         isEntered = false;
                     }
@@ -129,120 +147,17 @@ class _MyHomePageState extends State<MyHomePage>
                     );
 
                 },
-                child: Container(
-                    color: CupertinoColors.black,
-                    child: Column(
-                        children: [
-
-                            SizedBox(
-                                height: 190,
-                                width: double.infinity,
-
-                                child: Padding(
-                                    padding: const EdgeInsets.only(top: 100),
-
-                                    child: SingleChildScrollView(
-                                        scrollDirection: Axis.horizontal,
-                                        reverse: true,
-                                        child: Text(
-                                            display,
-                                            textAlign: TextAlign.right,
-                                            style: TextStyle(
-
-                                                fontSize: 30,
-                                                color: Colors.orange
-                                            )
-                                        )
-                                    )
-                                )
-                            ),
-                            Container(
-
-                                color: Colors.black,
-                                height: 100,
-                                width: double.infinity,
-
-                                child: TextField(
-                                    controller: controller,
-                                    focusNode: textFieldFocus,
-                                    inputFormatters: [
-                                        FilteringTextInputFormatter.allow(RegExp(r'[0-9*/()\-+\.=C]'))
-                                    ],
-                                    maxLines: 1,
-                                    textAlign: TextAlign.right,
-                                    textDirection: TextDirection.ltr,
-                                    cursorColor: Colors.orange,
-                                    cursorWidth: 3,
-                                    style: TextStyle(
-                                        fontSize: 35,
-                                        color: Colors.orange,
-                                        height: 1.2
-                                    ),
-                                    decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                        filled: true,
-                                        fillColor: CupertinoColors.black,
-                                        isDense: true,
-                                        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10)
-                                    )
-                                )
-
-                            ),
-
-                            Wrap(
-                                runSpacing: 25,
-                                children: [
-
-                                    Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                        children: [buttonText("C"),
-                                            buttonText("("),
-                                            buttonText(")"),
-                                            buttonText("←", icon: Icon(Icons.backspace))
-                                        ]
-                                    ),
-                                    Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                        children: [buttonText("7"),
-                                            buttonText("8"),
-                                            buttonText("9"),
-                                            buttonText("/")
-                                        ]
-                                    ),
-                                    Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                        children: [buttonText("4"),
-                                            buttonText("5"),
-                                            buttonText("6"),
-                                            buttonText("*")
-                                        ]),
-                                    Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                        children: [buttonText("1"),
-                                            buttonText("2"),
-                                            buttonText("3"),
-                                            buttonText("-")
-                                        ]),
-                                    Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-
-                                        children: [buttonText("0"),
-                                            buttonText("."),
-                                            buttonText("="),
-                                            buttonText("+")
-                                        ])
-                                ]
-                            )
-                        ]
-                    )
+                child: OrientationLayout(
+                    portrait: portrait(),
+                    landscape: landScape()
                 )
-            )
 
+            )
         );
     }
     void _display(String text)
     {
-        if (display.isNotEmpty && RegExp(r'[0-9+-/*]').hasMatch(text))
+        if (display.isNotEmpty && RegExp(r'[0-9+-/×]').hasMatch(text))
         {
             if (display == "Error")
             {
@@ -262,29 +177,28 @@ class _MyHomePageState extends State<MyHomePage>
             lastString = "";
             openBracket = 0;
             closedBracket = 0;
-            numbracket = 0;
+            operatorCount = 0;
             noDot = 0;
             setState(()
-                {
-
-                });
+                {});
         }
         else if (text == "←")
         {
             if (controller.text.isNotEmpty)
             {
-                if (str[str.length - 1] == '.')
+                final text = controller.text;
+                if (text.isNotEmpty && text.endsWith('.'))
                 {
                     noDot--;
-                }if (str[str.length - 1] == '(')
+                }if (text.isNotEmpty && text.endsWith('('))
                 {
                     openBracket--;
-                }if (str[str.length - 1] == ')')
+                }if (text.endsWith(')'))
                 {
-                    closedBracket++;
-                }if (RegExp(r'[+\-*/]').hasMatch(str[str.length - 1]))
+                    closedBracket--;
+                }if (RegExp(r'[+\-×/]').hasMatch(str[str.length - 1]))
                 {
-                    numbracket--;
+                    operatorCount--;
                 }
 
                 controller.text =
@@ -298,14 +212,14 @@ class _MyHomePageState extends State<MyHomePage>
         }
         else
         {
-            if (RegExp(r'[+*/\.]').hasMatch(text) && RegExp(r'[*/+\.]').hasMatch(lastCharacter) || ( (lastCharacter == "(" ) && (text == '(' || RegExp(r'[+\-/*]').hasMatch(text))))
+            if (RegExp(r'[+×/.]').hasMatch(text) && RegExp(r'[×/+.]').hasMatch(lastCharacter) || ( (lastCharacter == "(" ) && (text == '(' || RegExp(r'[+\-/×]').hasMatch(text))))
             {
             }
             else if (text == '(')
             {
                 if (str.isNotEmpty && !(str[str.length - 1] == '(' && ( text == '(')))
                 {
-                    numbracket++;
+                    operatorCount++;
                 }
 
                 controller.text += text;
@@ -326,48 +240,60 @@ class _MyHomePageState extends State<MyHomePage>
             }
             else
             {
-                if (RegExp(r'[+\-/*]').hasMatch(text))
+                if (RegExp(r'[+\-/×]').hasMatch(text))
                 {
-                    numbracket++;
+                    operatorCount++;
                     isDot = false;
                 }
-                if (text == '.' && isDot == false && numbracket >= noDot)
+                if (text == '.' && !isDot /*&& operatorCount >= noDot*/)
                 {
 
                     isDot = true;
                     controller.text += text;
                     noDot++;
-                } else if (text != '.' && (text != ')' || text != '('))
+                } else if (text != '.' && text != ')' && text != '(')
                 {
                     controller.text += text;
                 }
             }
         }
         str = controller.text;
-        lastCharacter = str[str.length - 1];
+        if (str.isNotEmpty)
+        {
+            lastCharacter = str[str.length - 1];
+        }
         setState(()
             {
-            {}});
+            {}
+            }
+        );
     }
 
     Widget buttonText(String text, {Widget? icon})
     {
+        final double size;
+        bool isPortrait =
+            MediaQuery.of(context).orientation == Orientation.portrait;
+        size = isPortrait ? 80.r : 70.r;
+
         return Container(
-            width: 80,
-            height: 80,
+
+            width: size,
+            height: size,
             decoration: BoxDecoration(
                 color: buttonColor(text),
                 shape: BoxShape.circle
             ),
-            // color:
             child: InkWell(onTap: () => _display(text),
                 child: Center(
                     child: icon ?? Text(text, style: TextStyle(
-                                fontSize: 40, color:
-                                CupertinoColors.black,
+                                fontSize: isPortrait ? 40.sp : 9.sp,
+                                color: CupertinoColors.black,
                                 fontWeight: FontWeight.bold
-                            ))
-                ))
+                            )
+                        )
+                )
+            )
         );
     }
 
@@ -377,7 +303,266 @@ class _MyHomePageState extends State<MyHomePage>
         if (text == '=') return Colors.green.shade50;
         if (text == '←') return Colors.blue.shade300;
         if (text == '(' || text == ')') return Colors.purpleAccent.shade400;
-        if (RegExp(r'[/*\-+]').hasMatch(text)) return Colors.blue.shade300;
+        if (RegExp(r'[/×\-+]').hasMatch(text)) return Colors.blue.shade300;
         return Colors.orange;
+    }
+    Widget landScape()
+    {
+        return Container(
+            color: CupertinoColors.black,
+            child: Column(
+                children: [
+
+                    SizedBox(
+
+                        height: 110.h,
+                        width: double.infinity.w,
+
+                        child: Padding(
+                            padding: const EdgeInsets.only(top: 20),
+                            child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                reverse: true,
+                                child: Text(
+                                    display,
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(
+
+                                        fontSize: 13.sp,
+                                        color: Colors.orange
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    Container(
+
+                        color: Colors.black,
+                        height: 110.h,
+                        width: double.infinity.h,
+
+                        child: TextField(
+                            readOnly: true,
+                            controller: controller,
+                            focusNode: textFieldFocus,
+                            inputFormatters: [
+                                FilteringTextInputFormatter.allow(RegExp(r'[0-9×/()\-+.]'))
+                            ],
+                            maxLines: 1,
+                            textAlign: TextAlign.right,
+                            textDirection: TextDirection.ltr,
+                            cursorColor: Colors.orange,
+                            cursorWidth: 3.h,
+                            style: TextStyle(
+                                fontSize: 18.sp,
+                                color: Colors.orange,
+                                height: 1.2.h
+                            ),
+                            decoration: InputDecoration(
+                                border: InputBorder.none,
+                                filled: true,
+                                fillColor: CupertinoColors.black,
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 10.r, vertical: 10.r)
+                            )
+                        )
+
+                    ),
+
+                    SizedBox(
+                        width: 150.w,
+                        child: Wrap(
+                            runSpacing: 10.r,
+                            children: [
+
+                                Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                        buttonText("7"),
+                                        buttonText("8"),
+                                        buttonText("9"),
+                                        buttonText("/"),
+                                        buttonText("C")
+
+                                    ]
+                                ),
+                                Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                        buttonText("4"),
+                                        buttonText("5"),
+                                        buttonText("6"),
+                                        buttonText("×"),
+                                        buttonText("(")
+
+                                    ]
+                                ),
+                                Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                        buttonText("1"),
+                                        buttonText("2"),
+                                        buttonText("3"),
+                                        buttonText("-"),
+                                        buttonText(")")
+
+                                    ]
+                                ),
+                                Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+
+                                    children: [
+                                        buttonText("0"),
+                                        buttonText("."),
+                                        buttonText("="),
+                                        buttonText("+"),
+                                        buttonText("←", icon: Icon(Icons.backspace)
+                                        )
+                                    ]
+                                )
+                            ]
+                        )
+                    )
+                ]
+            )
+        );
+    }
+    Widget portrait()
+    {
+        return Container(
+            color: CupertinoColors.black,
+            child: Column(
+                children: [
+
+                    SizedBox(
+                        height: 85.h,
+                        width: double.infinity.h,
+
+                        child: Padding(
+                            padding: const EdgeInsets.only(top: 50),
+
+                            child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                reverse: true,
+                                child: Text(
+                                    display,
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(
+
+                                        fontSize: 30.sp,
+                                        color: Colors.orange
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    Container(
+
+                        color: Colors.black,
+                        height: 100.h,
+                        width: double.infinity.h,
+
+                        child: TextField(
+                            controller: controller,
+                            focusNode: textFieldFocus,
+                            inputFormatters: [
+                                FilteringTextInputFormatter.allow(RegExp(r'[0-9×/()\-+.]'))
+                            ],
+                            maxLines: 1,
+                            textAlign: TextAlign.right,
+                            textDirection: TextDirection.ltr,
+                            cursorColor: Colors.orange,
+                            cursorWidth: 3.h,
+                            style: TextStyle(
+                                fontSize: 35.sp,
+                                color: Colors.orange,
+                                height: 1.2.h
+                            ),
+                            decoration: InputDecoration(
+                                border: InputBorder.none,
+                                filled: true,
+                                fillColor: CupertinoColors.black,
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 10.r, vertical: 10.r)
+                            )
+                        )
+                    ),
+
+                    Wrap(
+                        runSpacing: 25.r,
+                        children: [
+
+                            Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                    buttonText("C"),
+                                    buttonText("("),
+                                    buttonText(")"),
+                                    buttonText("←", icon: Icon(Icons.backspace))
+                                ]
+                            ),
+                            Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                    buttonText("7"),
+                                    buttonText("8"),
+                                    buttonText("9"),
+                                    buttonText("/")
+                                ]
+                            ),
+                            Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                    buttonText("4"),
+                                    buttonText("5"),
+                                    buttonText("6"),
+                                    buttonText("×",/*icon:Icon(CupertinoIcons.asterisk_circle)×*/)
+                                ]
+                            ),
+                            Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                    buttonText("1"),
+                                    buttonText("2"),
+                                    buttonText("3"),
+                                    buttonText("-")
+                                ]
+                            ),
+                            Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+
+                                children: [
+                                    buttonText("0"),
+                                    buttonText("."),
+                                    buttonText("="),
+                                    buttonText("+")
+                                ]
+                            )
+                        ]
+                    )
+                ]
+            )
+        );
+    }
+}
+
+class OrientationLayout extends StatelessWidget
+{
+    const OrientationLayout({super.key, required this.portrait, required this.landscape});
+
+    final Widget portrait;
+    final Widget landscape;
+
+    @override
+    Widget build(BuildContext context)
+    {
+
+        return OrientationBuilder(builder: (context, orientation)
+            {
+                return orientation == Orientation.portrait ?
+                    portrait :
+                    landscape;
+            }
+        );
     }
 }
