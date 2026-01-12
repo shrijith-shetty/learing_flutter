@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget
                         child: child!
                     );
                 },
-                home: SpashScreen()
+                home: MyHomePage(title: "My Calculator")
             )
         );
 
@@ -68,7 +68,6 @@ class _MyHomePageState extends State<MyHomePage>
     int coma = 0;
     bool isDotAtEnd = false;
     bool isThird = false;
-    int comma = 0;
     bool isComma = false;
 
     @override
