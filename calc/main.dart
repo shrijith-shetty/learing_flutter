@@ -1,4 +1,5 @@
-import 'package:calc/spash_screen.dart';
+// import 'package:calc/spash_screen.dart';
+import 'package:calc/indianformat.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -109,7 +110,7 @@ class _MyHomePageState extends State<MyHomePage>
             appBar: AppBar(
 
                 backgroundColor: CupertinoColors.black,
-                title: Center(child: Text("Shrijith’s Calculator", style: TextStyle(color: Colors.orange, fontSize: isPortrait ? 30.sp : 20.sp))),
+                title: Center(child: Text("Calculator", style: TextStyle(color: Colors.orange, fontSize: isPortrait ? 30.sp : 20.sp))),
                 centerTitle: true
 
             ),
@@ -182,6 +183,7 @@ class _MyHomePageState extends State<MyHomePage>
             )
         );
     }
+
     void _display(String text)
     {
         if (display.isNotEmpty && RegExp(r'[()0-9+-/×]').hasMatch(text))
@@ -240,6 +242,11 @@ class _MyHomePageState extends State<MyHomePage>
             {
                 controller.text += ')';
                 closedBracket++;
+            }
+            while (lastCharacter == '(')
+            {
+                controller.text = controller.text.substring(0, controller.text.length - 1);
+                lastCharacter = controller.text[controller.text.length-1];
             }
             display = calculation(controller.text);
             lastString = display;
@@ -327,13 +334,25 @@ class _MyHomePageState extends State<MyHomePage>
                 }
             }
         }
-        // controller.text = coma(controller.text);
 
         str = controller.text;
 
         if (str.isNotEmpty)
         {
             lastCharacter = str[str.length - 1];
+        }
+
+        final oldSelection = controller.selection;
+        controller.text = indianFormat(controller.text);
+        controller.selection = TextSelection.collapsed(
+            offset: controller.text.length
+        );
+
+        if (display.isNotEmpty)
+        {
+
+            String str = calculation(controller.text.replaceAll(',', ''));
+            display = indianFormat(str);
         }
 
         setState(()
@@ -421,6 +440,7 @@ class _MyHomePageState extends State<MyHomePage>
                         height: 100.h,
                         width: double.infinity,
                         child: TextField(
+                            enabled: false,
                             controller: controller,
                             focusNode: textFieldFocus,
                             scrollController: textScrollController,
@@ -540,6 +560,7 @@ class _MyHomePageState extends State<MyHomePage>
                         height: 100.h,
                         width: double.infinity,
                         child: TextField(
+                            keyboardType: TextInputType.none,
                             controller: controller,
                             focusNode: textFieldFocus,
                             scrollController: textScrollController, 
